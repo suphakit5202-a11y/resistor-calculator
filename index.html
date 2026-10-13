@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ตัวต้านทาน">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<title>เครื่องคำนวณค่าตัวต้านทาน</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Sarabun", sans-serif;
+    background: linear-gradient(160deg, #0f172a, #1e293b);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 30px 15px;
+  }
+  .container {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 640px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: var(--accent);
+  }
+  p.sub {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+  }
+  .mode-switch {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+  }
+  .mode-switch button {
+    background: #334155;
+    border: none;
+    color: var(--text);
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.2s;
+  }
+  .mode-switch button.active {
+    background: var(--accent);
+    color: #0f172a;
+    font-weight: bold;
+  }
+  .resistor-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0 30px;
+    height: 60px;
+  }
+  .lead { height: 4px; width: 40px; background: #cbd5e1; }
+  .body-resistor {
+    height: 34px;
+    flex: 1;
+    max-width: 320px;
+    background: #d6b98c;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    box-shadow: inset 0 -4px 6px rgba(0,0,0,0.15), inset 0 4px 6px rgba(255,255,255,0.2);
+  }
+  .band {
+    width: 12px;
+    height: 34px;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+  .band.wide { width: 16px; }
+  .bands-config {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .band-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .band-row label {
+    width: 90px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  select {
+    flex: 1;
+    background: #0f172a;
+    color: var(--text);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+  }
+  .result {
+    margin-top: 25px;
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #334155;
+  }
+  .result .value {
+    font-size: 2rem;
+    color: var(--accent);
+    font-weight: bold;
+  }
+  .result .tolerance {
+    color: var(--muted);
+    margin-top: 6px;
+    font-size: 0.95rem;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 20px;
+  }
+  #installBtn {
+    display: none;
+    width: 100%;
+    margin-top: 18px;
+    background: var(--accent);
+    color: #0f172a;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎨 เครื่องคำนวณค่าตัวต้านทาน</h1>
+  <p class="sub">เลือกสีของแถบเพื่อคำนวณค่าความต้านทาน</p>
+
+  <div class="mode-switch">
+    <button id="mode4" class="active">4 แถบสี</button>
+    <button id="mode5">5 แถบสี</button>
+  </div>
+
+  <div class="resistor-visual">
+    <div class="lead"></div>
+    <div class="body-resistor" id="visual"></div>
+    <div class="lead"></div>
+  </div>
+
+  <div class="bands-config" id="bandsConfig"></div>
+
+  <div class="result">
+    <div class="value" id="resultValue">-- Ω</div>
+    <div class="tolerance" id="resultTolerance"></div>
+  </div>
+
+  <button id="installBtn">📲 ติดตั้งเป็นแอป</button>
+
+  <footer>ค่าที่คำนวณเป็นค่าประมาณตามมาตรฐานรหัสสีตัวต้านทาน</footer>
+</div>
+
+<script>
+const colors = {
+  black:  { name: "ดำ",   digit: 0, multiplier: 1,        hex: "#1a1a1a" },
+  brown:  { name: "น้ำตาล", digit: 1, multiplier: 10,       hex: "#8B4513", tolerance: "±1%" },
+  red:    { name: "แดง",  digit: 2, multiplier: 100,      hex: "#e11d1d", tolerance: "±2%" },
+  orange: { name: "ส้ม",  digit: 3, multiplier: 1000,     hex: "#f97316" },
+  yellow: { name: "เหลือง", digit: 4, multiplier: 10000,    hex: "#facc15" },
+  green:  { name: "เขียว", digit: 5, multiplier: 100000,   hex: "#22c55e", tolerance: "±0.5%" },
+  blue:   { name: "น้ำเงิน", digit: 6, multiplier: 1000000,  hex: "#3b82f6", tolerance: "±0.25%" },
+  violet: { name: "ม่วง",  digit: 7, multiplier: 10000000, hex: "#8b5cf6", tolerance: "±0.1%" },
+  grey:   { name: "เทา",  digit: 8, multiplier: 100000000, hex: "#9ca3af", tolerance: "±0.05%" },
+  white:  { name: "ขาว",  digit: 9, multiplier: 1000000000, hex: "#f9fafb" },
+  gold:   { name: "ทอง",  digit: null, multiplier: 0.1,     hex: "#d4af37", tolerance: "±5%" },
+  silver: { name: "เงิน", digit: null, multiplier: 0.01,    hex: "#c0c0c0", tolerance: "±10%" }
+};
+
+const digitColors = ["black","brown","red","orange","yellow","green","blue","violet","grey","white"];
+const multiplierColors = ["black","brown","red","orange","yellow","green","blue","violet","grey","white","gold","silver"];
+const toleranceColors = ["brown","red","green","blue","violet","grey","gold","silver"];
+
+let mode = 4;
+
+function buildOptions(colorList, selected) {
+  return colorList.map(key =>
+    `<option value="${key}" ${key === selected ? "selected" : ""}>${colors[key].name}</option>`
+  ).join("");
+}
+
+function renderConfig() {
+  const container = document.getElementById("bandsConfig");
+  container.innerHTML = "";
+
+  const rows = [];
+  if (mode === 4) {
+    rows.push({ label: "แถบที่ 1 (หลักที่ 1)", options: digitColors, def: "brown" });
+    rows.push({ label: "แถบที่ 2 (หลักที่ 2)", options: digitColors, def: "black" });
+    rows.push({ label: "แถบที่ 3 (ตัวคูณ)", options: multiplierColors, def: "red" });
+    rows.push({ label: "แถบที่ 4 (ค่าคลาดเคลื่อน)", options: toleranceColors, def: "gold" });
+  } else {
+    rows.push({ label: "แถบที่ 1 (หลักที่ 1)", options: digitColors, def: "brown" });
+    rows.push({ label: "แถบที่ 2 (หลักที่ 2)", options: digitColors, def: "black" });
+    rows.push({ label: "แถบที่ 3 (หลักที่ 3)", options: digitColors, def: "black" });
+    rows.push({ label: "แถบที่ 4 (ตัวคูณ)", options: multiplierColors, def: "red" });
+    rows.push({ label: "แถบที่ 5 (ค่าคลาดเคลื่อน)", options: toleranceColors, def: "gold" });
+  }
+
+  rows.forEach((row, i) => {
+    const div = document.createElement("div");
+    div.className = "band-row";
+    div.innerHTML = `<label>${row.label}</label>
+      <select id="band${i}" onchange="calculate()">
+        ${buildOptions(row.options, row.def)}
+      </select>`;
+    container.appendChild(div);
+  });
+
+  calculate();
+}
+
+function renderVisual(selections) {
+  const visual = document.getElementById("visual");
+  visual.innerHTML = "";
+  selections.forEach((colorKey, idx) => {
+    const band = document.createElement("div");
+    band.className = "band" + (idx === selections.length - 1 ? " wide" : "");
+    band.style.background = colors[colorKey].hex;
+    if (idx === selections.length - 1) band.style.marginLeft = "10px";
+    visual.appendChild(band);
+  });
+}
+
+function formatResistance(ohms) {
+  if (ohms >= 1000000) return (ohms / 1000000).toFixed(ohms % 1000000 === 0 ? 0 : 2) + " MΩ";
+  if (ohms >= 1000) return (ohms / 1000).toFixed(ohms % 1000 === 0 ? 0 : 2) + " kΩ";
+  return ohms.toFixed(ohms % 1 === 0 ? 0 : 2) + " Ω";
+}
+
+function calculate() {
+  const numBands = mode === 4 ? 4 : 5;
+  const selections = [];
+  for (let i = 0; i < numBands; i++) {
+    selections.push(document.getElementById("band" + i).value);
+  }
+
+  renderVisual(selections);
+
+  let digits, multiplierKey, toleranceKey;
+  if (mode === 4) {
+    digits = [colors[selections[0]].digit, colors[selections[1]].digit];
+    multiplierKey = selections[2];
+    toleranceKey = selections[3];
+  } else {
+    digits = [colors[selections[0]].digit, colors[selections[1]].digit, colors[selections[2]].digit];
+    multiplierKey = selections[3];
+    toleranceKey = selections[4];
+  }
+
+  const baseValue = parseInt(digits.join(""), 10);
+  const ohms = baseValue * colors[multiplierKey].multiplier;
+  const tolerance = colors[toleranceKey].tolerance || "±20%";
+
+  document.getElementById("resultValue").textContent = formatResistance(ohms);
+  document.getElementById("resultTolerance").textContent = "ค่าคลาดเคลื่อน: " + tolerance;
+}
+
+document.getElementById("mode4").addEventListener("click", () => {
+  mode = 4;
+  document.getElementById("mode4").classList.add("active");
+  document.getElementById("mode5").classList.remove("active");
+  renderConfig();
+});
+document.getElementById("mode5").addEventListener("click", () => {
+  mode = 5;
+  document.getElementById("mode5").classList.add("active");
+  document.getElementById("mode4").classList.remove("active");
+  renderConfig();
+});
+
+renderConfig();
+
+// ---- PWA: register service worker ----
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+// ---- PWA: install prompt button (Android/Chrome) ----
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = "block";
+});
+
+installBtn.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.style.display = "none";
+});
+
+window.addEventListener("appinstalled", () => {
+  installBtn.style.display = "none";
+});
+</script>
+</body>
+</html>
